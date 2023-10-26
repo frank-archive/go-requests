@@ -27,6 +27,14 @@ func Configure(baseProfile string, opts ...client.Option) error {
 	return defaultClient.Configure(opts...)
 }
 
+func NewClient(baseProfile string, opts ...client.Option) (*Client, error) {
+	p, ok := profiles.Get(baseProfile)
+	if !ok {
+		return nil, errors.New("invalid profile: " + baseProfile)
+	}
+	return client.New(append(p, opts...)...)
+}
+
 func CtxDo(ctx context.Context, req *Request) (func(), *Response, error) {
 	return defaultClient.CtxDo(ctx, req)
 }
