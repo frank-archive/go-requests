@@ -50,3 +50,15 @@ func WithProxy(proxy string) client.Option {
 		return nil
 	}
 }
+
+// WithProxyFunc sets the proxy getter for a client
+func WithProxyFunc(proxyFunc func(*http.Request) (*url.URL, error)) client.Option {
+	return func(c *client.Client) error {
+		htr, ok := shouldGetHttpTransport(c.Client.Transport)
+		if !ok {
+			return errors.New("unsupport roundtripper")
+		}
+		htr.Proxy = proxyFunc
+		return nil
+	}
+}
