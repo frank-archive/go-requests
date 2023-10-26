@@ -25,5 +25,8 @@ func (c *Client) CtxDo(
 		return func() {}, response.Wrap(resp), err
 	}
 	ret := response.Wrap(resp)
-	return ret.Done, ret, nil
+	return func() {
+		ret.Done()
+		request.PutRequest(r)
+	}, ret, nil
 }

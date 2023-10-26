@@ -4,27 +4,33 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"net/url"
 )
 
 type Request struct {
 	Method  string
 	URL     string
-	Proxy   string
 	Headers http.Header
 	Content interface{}
 }
 
 func (r *Request) Build(ctx context.Context) (*http.Request, error) {
-	req, err := http.NewRequestWithContext(ctx, r.Method, r.URL, nil)
+	rURL, err := url.Parse(r.URL)
 	if err != nil {
 		return nil, err
 	}
+	req := getRequest()
+	req.Method = r.Method
+	req.URL = rURL
 	req.Header = r.Headers
+	req.Host = rURL.Hostname()
+	req = req.WithContext(ctx) // copy occurred here
+
 	var setContentType string
-	setContentType, req.Body = r.buildContent(req.Header.Get("Content-Type"))
+	setContentType, req.ContentLength, req.Body = r.buildContent(req.Header.Get("Content-Type"))
 	r.Headers.Set("Content-Type", setContentType)
 	req.GetBody = func() (io.ReadCloser, error) {
-		_, body := r.buildContent(setContentType)
+		_, _, body := r.buildContent(setContentType)
 		return body, nil
 	}
 	return req, nil

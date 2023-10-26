@@ -13,32 +13,39 @@ import (
 type FormBody map[string]interface{}
 type MultiPartFormBody map[string]io.Reader
 
-func (r *Request) buildContent(defaultContentType string) (string, io.ReadCloser) {
-	var reader io.ReadCloser
+func (r *Request) buildContent(
+	defaultContentType string,
+) (contentType string, contentLength int64, body io.ReadCloser) {
 	switch c := r.Content.(type) {
 	case FormBody:
 		reader, writer := io.Pipe()
 		encoder := form.NewEncoder(writer)
 		go func() { writer.CloseWithError(encoder.Encode(c)) }()
-		return "application/x-www-form-urlencoded", reader
+		return "application/x-www-form-urlencoded", 0, reader
 	case string: // guess later
-		reader = io.NopCloser(strings.NewReader(c))
+		body = io.NopCloser(strings.NewReader(c))
+		contentLength = int64(len(c))
 	case []byte: // guess later
-		reader = io.NopCloser(bytes.NewReader(c))
+		body = io.NopCloser(bytes.NewReader(c))
+		contentLength = int64(len(c))
 	case interface{}:
 		reader, writer := io.Pipe()
 		encoder := json.NewEncoder(writer)
 		// errors are returned when Client.Do is called
 		go func() { writer.CloseWithError(encoder.Encode(c)) }()
-		return "application/json", reader
+		return "application/json", 0, reader
 	}
 	if defaultContentType != "" {
-		return defaultContentType, reader
+		return defaultContentType, 0, body
 	}
 	// unknown content type yet
 	buf := make([]byte, 512)
-	if l, err := reader.Read(buf); err == nil {
-		return http.DetectContentType(buf[:l]), reader
+	contentType = "text/plain"
+	if v, ok := body.(io.ReadSeeker); ok {
+		if l, err := v.Read(buf); err == nil {
+			contentType = http.DetectContentType(buf[:l])
+		}
+		v.Seek(0, io.SeekStart)
 	}
-	return "text/plain", reader
+	return
 }
