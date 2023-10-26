@@ -11,6 +11,7 @@ import (
 )
 
 type Client = client.Client
+type ClientOption = client.Option
 type Request = request.Request
 type Response = response.Response
 
