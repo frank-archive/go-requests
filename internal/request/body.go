@@ -16,6 +16,9 @@ type MultiPartFormBody map[string]io.Reader
 func (r *Request) buildContent(
 	defaultContentType string,
 ) (contentType string, contentLength int64, body io.ReadCloser) {
+	if r.Content == nil {
+		return "", 0, nil
+	}
 	switch c := r.Content.(type) {
 	case FormBody:
 		reader, writer := io.Pipe()

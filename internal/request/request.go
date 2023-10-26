@@ -28,7 +28,9 @@ func (r *Request) Build(ctx context.Context) (*http.Request, error) {
 
 	var setContentType string
 	setContentType, req.ContentLength, req.Body = r.buildContent(req.Header.Get("Content-Type"))
-	r.Headers.Set("Content-Type", setContentType)
+	if setContentType != "" {
+		r.Headers.Set("Content-Type", setContentType)
+	}
 	req.GetBody = func() (io.ReadCloser, error) {
 		_, _, body := r.buildContent(setContentType)
 		return body, nil
