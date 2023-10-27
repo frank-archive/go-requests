@@ -104,6 +104,9 @@ func (tc *TraceContext) Init() {
 			tc.ConnectErr = err
 			tc.hook("connect_done", false, true)
 		},
-		GotFirstResponseByte: func() { tc.FirstByte = time.Since(tc.start) },
+		GotFirstResponseByte: func() {
+			tc.FirstByte = time.Since(tc.start)
+			tc.hook("first_byte", false, false)
+		},
 	}
 }
