@@ -5,12 +5,10 @@ import (
 	"errors"
 	"net/http"
 	"net/http/cookiejar"
-	"net/http/httptrace"
 	"net/url"
 
 	"github.com/frankli0324/go-requests/internal/client"
 	"github.com/frankli0324/go-requests/utils"
-	"github.com/frankli0324/go-requests/utils/trace"
 )
 
 func WithSession(options *cookiejar.Options) client.Option {
@@ -62,15 +60,6 @@ func WithProxyFunc(proxyFunc func(*http.Request) (*url.URL, error)) client.Optio
 			return errors.New("unsupport roundtripper")
 		}
 		htr.Proxy = proxyFunc
-		return nil
-	}
-}
-
-func WithTrace(tr *httptrace.ClientTrace) client.Option {
-	return func(c *client.Client) error {
-		c.Transport = trace.TracingTransport{
-			RoundTripper: c.Transport, Trace: tr,
-		}
 		return nil
 	}
 }
