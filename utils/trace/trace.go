@@ -18,9 +18,9 @@ func WithoutTrace(ctx context.Context) context.Context {
 }
 
 func WithTraceContext(
-	ctx context.Context, hook func(ctx *traceContext, event string), watch watchType,
+	ctx context.Context, hook func(ctx *TraceContext, event string), watch watchType,
 ) context.Context {
-	tc := &traceContext{}
+	tc := &TraceContext{}
 	tc.Init()
 	return context.WithValue(ctx, kWithTraceCtx, tc)
 }
@@ -33,7 +33,7 @@ const (
 	WatchAll
 )
 
-type traceContext struct {
+type TraceContext struct {
 	start time.Time
 	trace *httptrace.ClientTrace
 
@@ -53,10 +53,10 @@ type traceContext struct {
 	FirstByte time.Duration // from start to GotFirstResponseByte
 
 	when    watchType
-	OnEvent func(ctx *traceContext, event string)
+	OnEvent func(ctx *TraceContext, event string)
 }
 
-func (tc *traceContext) hook(e string, is_start, is_done bool) {
+func (tc *TraceContext) hook(e string, is_start, is_done bool) {
 	if tc.when == WatchAll ||
 		(is_start && tc.when == WatchStart) ||
 		(is_done && tc.when == WatchDone) {
@@ -64,15 +64,15 @@ func (tc *traceContext) hook(e string, is_start, is_done bool) {
 	}
 }
 
-func (tc *traceContext) Stop() {
+func (tc *TraceContext) Stop() {
 	tc.Total = time.Since(tc.start)
 }
 
-func (tc *traceContext) Reset() {
+func (tc *TraceContext) Reset() {
 	tc.start = time.Now()
 }
 
-func (tc *traceContext) Init() {
+func (tc *TraceContext) Init() {
 	tc.trace = &httptrace.ClientTrace{
 		DNSStart: func(di httptrace.DNSStartInfo) {
 			tc.DNS.Start = time.Now()
