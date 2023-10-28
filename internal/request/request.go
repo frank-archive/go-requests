@@ -2,7 +2,6 @@ package request
 
 import (
 	"context"
-	"io"
 	"net/http"
 	"net/url"
 )
@@ -36,14 +35,6 @@ func (r *Request) Build(ctx context.Context) (*http.Request, error) {
 	}
 	req = req.WithContext(ctx) // copy occurred here
 
-	var setContentType string
-	setContentType, req.ContentLength, req.Body = r.buildContent(req.Header.Get("Content-Type"))
-	if setContentType != "" {
-		r.Headers.Set("Content-Type", setContentType)
-	}
-	req.GetBody = func() (io.ReadCloser, error) {
-		_, _, body := r.buildContent(setContentType)
-		return body, nil
-	}
+	r.buildContent(req)
 	return req, nil
 }
