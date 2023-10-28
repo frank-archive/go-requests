@@ -6,11 +6,7 @@ import (
 )
 
 var p = sync.Pool{New: func() interface{} {
-	return &http.Request{
-		Proto:      "HTTP/1.1",
-		ProtoMajor: 1,
-		ProtoMinor: 1,
-	}
+	return &http.Request{}
 }}
 
 func getRequest() *http.Request {
