@@ -11,7 +11,7 @@ import (
 )
 
 type Client struct {
-	http.Client
+	Client http.Client
 }
 
 func New(opts ...Option) (*Client, error) {

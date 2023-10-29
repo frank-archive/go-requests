@@ -67,10 +67,10 @@ func WithProxyFunc(proxyFunc func(*http.Request) (*url.URL, error)) client.Optio
 
 func WithDecoder(name string, dec decoder.Decoder) client.Option {
 	return func(c *client.Client) error {
-		tr, ok := decoder.GetOrWrap(c.Transport)
+		tr, ok := decoder.GetOrWrap(c.Client.Transport)
 		tr.Decoders[name] = dec
 		if !ok {
-			c.Transport = tr
+			c.Client.Transport = tr
 		}
 		return nil
 	}
