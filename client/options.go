@@ -9,6 +9,7 @@ import (
 
 	"github.com/frankli0324/go-requests/internal/client"
 	"github.com/frankli0324/go-requests/utils"
+	"github.com/frankli0324/go-requests/utils/decoder"
 )
 
 func WithSession(options *cookiejar.Options) client.Option {
@@ -25,7 +26,7 @@ func WithDisableH2() client.Option {
 	return func(c *client.Client) error {
 		htr, ok := utils.GetHttpTransport(c.Client.Transport)
 		if !ok {
-			return errors.New("unsupport roundtripper")
+			return errors.New("unsupported roundtripper")
 		}
 		if htr.TLSNextProto == nil {
 			htr.TLSNextProto = make(map[string]func(string, *tls.Conn) http.RoundTripper)
@@ -45,7 +46,7 @@ func WithProxy(proxy string) client.Option {
 		}
 		htr, ok := utils.GetHttpTransport(c.Client.Transport)
 		if !ok {
-			return errors.New("unsupport roundtripper")
+			return errors.New("unsupported roundtripper")
 		}
 		htr.Proxy = http.ProxyURL(p)
 		return nil
@@ -57,9 +58,20 @@ func WithProxyFunc(proxyFunc func(*http.Request) (*url.URL, error)) client.Optio
 	return func(c *client.Client) error {
 		htr, ok := utils.GetHttpTransport(c.Client.Transport)
 		if !ok {
-			return errors.New("unsupport roundtripper")
+			return errors.New("unsupported roundtripper")
 		}
 		htr.Proxy = proxyFunc
+		return nil
+	}
+}
+
+func WithDecoder(name string, dec decoder.Decoder) client.Option {
+	return func(c *client.Client) error {
+		tr, ok := decoder.GetOrWrap(c.Transport)
+		tr.Decoders[name] = dec
+		if !ok {
+			c.Transport = tr
+		}
 		return nil
 	}
 }

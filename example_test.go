@@ -14,4 +14,6 @@ func ExampleCtxDo() {
 	}
 	defer done()
 	fmt.Println(resp.Header.Get("Date"))
+	c, err := resp.Body()
+	fmt.Println(string(c))
 }
