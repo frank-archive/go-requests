@@ -18,7 +18,7 @@ func GetOrWrap(tr http.RoundTripper) (*RoundTripper, bool) {
 		if utr, ok := innerTr.(utils.WrappedRoundTripper); ok {
 			innerTr = utr.Unwrap()
 		} else {
-			return &RoundTripper{innerTr, map[string]Decoder{}}, false
+			return &RoundTripper{tr, map[string]Decoder{}}, false
 		}
 	}
 	return innerTr.(*RoundTripper), true // found decoder in inner roundtrippers
