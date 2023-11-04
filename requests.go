@@ -15,6 +15,10 @@ type ClientOption = client.Option
 type Request = request.Request
 type Response = response.Response
 
+type RequestCtx = client.RequestCtx
+type Handler = client.Handler
+type Middleware = client.Middleware
+
 var defaultClient = Client{}
 
 func Configure(baseProfile string, opts ...client.Option) error {
