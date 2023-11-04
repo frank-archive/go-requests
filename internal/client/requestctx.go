@@ -19,8 +19,12 @@ type RequestCtx struct {
 // after calling this function, the request context
 // MUST NOT be used again.
 func (rc *RequestCtx) Done() {
-	rc.Request.Done()
-	rc.Response.Done()
+	if rc.Request != nil {
+		rc.Request.Done()
+	}
+	if rc.Response != nil {
+		rc.Response.Done()
+	}
 	putRequestCtx(rc)
 }
 

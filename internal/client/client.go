@@ -4,6 +4,7 @@ import (
 	"context"
 	"net"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/frankli0324/go-requests/internal/request"
@@ -14,8 +15,12 @@ type Handler = func(*RequestCtx) error
 type Middleware = func(next Handler) Handler
 
 type Client struct {
-	Client      http.Client
-	Middlewares []Middleware
+	Client http.Client
+
+	// I miss partial classes in C#
+	middlewares    []Middleware
+	chainedHandler Handler
+	mwLock         sync.RWMutex
 }
 
 func New(opts ...Option) (*Client, error) {
@@ -43,37 +48,31 @@ func New(opts ...Option) (*Client, error) {
 			},
 		},
 	}
+	cli.chainedHandler = cli.request
 	return cli, cli.Configure(opts...)
-}
-
-func (c *Client) Use(mw Middleware) {
-	c.Middlewares = append(c.Middlewares, mw)
 }
 
 func (c *Client) CtxDo(
 	ctx context.Context, req *request.Request,
 ) (func(), *response.Response, error) {
-	call := func(rc *RequestCtx) error {
-		r, err := req.Build(ctx)
-		if err != nil {
-			return err
-		}
-		resp, err := c.Client.Do(r)
-		if err != nil {
-			// on error, return a Response that won't be recovered
-			return err
-		}
-		rc.Response = response.Wrap(resp)
-		return nil
-	}
-	for _, mw := range c.Middlewares {
-		call = mw(call)
-	}
 	rctx := getRequestCtx(ctx)
 	rctx.Request = req
-	if err := call(rctx); err != nil {
-		return func() {}, rctx.Response, err
-	}
+	c.mwLock.RLock()
+	call := c.chainedHandler
+	c.mwLock.RUnlock()
+	return rctx.Done, rctx.Response, call(rctx)
+}
 
-	return rctx.Done, rctx.Response, nil
+func (c *Client) request(rc *RequestCtx) error {
+	r, err := rc.Request.Build(rc.Context)
+	if err != nil {
+		return err
+	}
+	resp, err := c.Client.Do(r)
+	if err != nil {
+		// on error, return a Response that won't be recovered
+		return err
+	}
+	rc.Response = response.Wrap(resp)
+	return nil
 }
