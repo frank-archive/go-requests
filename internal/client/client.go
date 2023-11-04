@@ -4,14 +4,23 @@ import (
 	"context"
 	"net"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/frankli0324/go-requests/internal/request"
 	"github.com/frankli0324/go-requests/internal/response"
 )
 
+type Handler = func(*RequestCtx) error
+type Middleware = func(next Handler) Handler
+
 type Client struct {
 	Client http.Client
+
+	// I miss partial classes in C#
+	middlewares    []Middleware
+	chainedHandler Handler
+	mwLock         sync.RWMutex
 }
 
 func New(opts ...Option) (*Client, error) {
@@ -39,24 +48,31 @@ func New(opts ...Option) (*Client, error) {
 			},
 		},
 	}
+	cli.chainedHandler = cli.request
 	return cli, cli.Configure(opts...)
 }
 
 func (c *Client) CtxDo(
 	ctx context.Context, req *request.Request,
 ) (func(), *response.Response, error) {
-	r, err := req.Build(ctx)
+	rctx := getRequestCtx(ctx)
+	rctx.Request = req
+	c.mwLock.RLock()
+	call := c.chainedHandler
+	c.mwLock.RUnlock()
+	return rctx.Done, rctx.Response, call(rctx)
+}
+
+func (c *Client) request(rc *RequestCtx) error {
+	r, err := rc.Request.Build(rc.Context)
 	if err != nil {
-		return func() {}, nil, err
+		return err
 	}
 	resp, err := c.Client.Do(r)
 	if err != nil {
 		// on error, return a Response that won't be recovered
-		return func() {}, response.Wrap(resp), err
+		return err
 	}
-	ret := response.Wrap(resp)
-	return func() {
-		ret.Done()
-		request.PutRequest(r)
-	}, ret, nil
+	rc.Response = response.Wrap(resp)
+	return nil
 }

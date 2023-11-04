@@ -13,6 +13,6 @@ func getRequest() *http.Request {
 	return p.Get().(*http.Request)
 }
 
-func PutRequest(req *http.Request) {
+func putRequest(req *http.Request) {
 	p.Put(req)
 }

@@ -19,6 +19,8 @@ type Request struct {
 	Encoders []func(io.ReadCloser) (string, io.ReadCloser)
 
 	NoRedirect bool
+
+	innerReq *http.Request
 }
 
 func (r *Request) Build(ctx context.Context) (*http.Request, error) {
@@ -36,8 +38,13 @@ func (r *Request) Build(ctx context.Context) (*http.Request, error) {
 		ctx = context.WithValue(ctx, KRedirect, false)
 	}
 	req = req.WithContext(ctx) // copy occurred here
+	r.innerReq = req
 
 	r.buildContent(req)
 	r.buildEncoding(req)
 	return req, nil
+}
+
+func (r *Request) Done() {
+	putRequest(r.innerReq)
 }
